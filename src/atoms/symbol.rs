@@ -1,34 +1,48 @@
 
 use std::fmt::Display;
-use std::hash::{Hash, Hasher};
+use std::hash::{
+  Hash,
+  Hasher
+};
+use std::rc::Rc;
 
 use fnv::FnvHasher;
 
-use crate::expression::{Ex, ExpressionInterface};
+use crate::IsEqual;
+use crate::expression::{
+  Ex,
+  ExpressionInterface,
+  RcEx, ExpressionKind
+};
 use crate::string::FormattingParameters;
 
 
+pub type RcSymbol = Rc<Symbol>;
 
 // Todo: Should strings be interned?
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Symbol<'s> {
-  pub name: &'s str,
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
+pub struct Symbol {
+  // This awkward construction is due to the need to give out owned references to
+  // a vector containing `name.`
+  pub name: String,
   pub hash: u64
 }
 
-impl<'s> Display for Symbol<'s> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name)
-    }
+impl Display for Symbol {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.name)
+  }
 }
 
-impl<'s> Symbol<'s> {
+impl Symbol {
 
-  pub fn new(name: &str) -> Symbol {
-    Symbol {
-      name,
-      hash: 0
-    }
+  pub fn new_rc(name: String) -> RcSymbol {
+    Rc::new(
+      Symbol {
+        name,
+        hash: 0
+      }
+    )
   }
 
   // Private to force a new hash even if `self.hash != 0`.
@@ -52,123 +66,122 @@ impl<'s> Symbol<'s> {
 
   // Formatting-oriented Methods
 
-  pub fn string_form(&self, params: FormattingParameters) -> String {
+}
+
+
+impl Ex for Symbol {
+
+  fn string_form(&self, params: &FormattingParameters) -> String {
     if self.name.len() == 0 {
       return "<EMPTYSYM>".to_string();
     }
 
     if self.name.starts_with(&params.context) {
       return self.name
-                  .strip_prefix(
-                    &params.context
-                  )
-                  .unwrap()
-                  .to_string();
+      .strip_prefix(
+        &params.context
+      )
+      .unwrap()
+      .to_string();
     }
 
     { // Scope for part_iter
       let mut part_iter = params.context_path.get_parts().into_iter();
       part_iter.next(); // Skip the head
       for path_part in part_iter {
-        let path = path_part.string_value().unwrap();
-        
+        let path = path_part.string_form(params);
+
+        // Don't print the `Global\`whatever` part if it's in scope.
         if self.name.starts_with(&path) {
           return self.name
-                      .strip_prefix(
-                        &params.context
-                      )
-                      .unwrap()
-                      .to_string();
+          .strip_prefix(
+            &params.context
+          )
+          .unwrap()
+          .to_string();
         }
       }
     }
-    return format_sym_name(&self.name, &params)
+    return format_sym_name(&self.name, params)
+  }
+
+  fn is_equal(&self, other: &dyn Ex) -> IsEqual {
+    match other.kind() {
+
+      ExpressionKind::Symbol => {
+        let params = FormattingParameters::standard();
+        (self.string_form(&params) == other.string_form(&params)).into()
+      }
+
+      _ => IsEqual::False
+
+    }
+  }
+
+  fn deep_copy(&self) -> RcEx {
+    todo!()
+  }
+
+  fn copy(&self) -> RcEx {
+    todo!()
+  }
+
+  fn needs_eval(&self) -> bool {
+    todo!()
+  }
+
+  fn hash(&self) -> u64 {
+    todo!()
+  }
+
+  fn kind(&self) -> ExpressionKind {
+    ExpressionKind::Symbol
   }
 
 }
 
+impl ExpressionInterface for Symbol {
 
-impl<'s> Hash for Symbol<'s> {
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    self.name.hash(state);
+  fn get_parts(&self) -> &Vec<RcEx> {
+    // Busted. 
+    vec![Rc::new(self.clone())]
   }
-}
 
+  fn get_part(&self, i: usize) -> RcEx {
+    todo!()
+  }
 
-impl<'s> Ex for Symbol<'s> {
-    fn string_form(&self, params: &FormattingParameters) -> String {
-        todo!()
-    }
+  fn set_parts(&self, new_parts: &Vec<RcEx>) {
+    todo!()
+  }
 
-    fn is_equal(&self, b: &dyn Ex) -> String {
-        todo!()
-    }
+  fn clear_hashes(&self) {
+    todo!()
+  }
 
-    fn deep_copy(&self) -> Box<dyn Ex> {
-        todo!()
-    }
+  fn len(&self) -> usize {
+    todo!()
+  }
 
-    fn copy(&self) -> Box<dyn Ex> {
-        todo!()
-    }
+  fn less(&self, i: i32, j: i32) -> bool {
+    todo!()
+  }
 
-    fn needs_eval(&self) -> bool {
-        todo!()
-    }
+  fn swap(&self, i: i32, j: i32) {
+    todo!()
+  }
 
-    fn hash(&self) -> u64 {
-        todo!()
-    }
+  fn append_ex(&self, e: RcEx) {
+    todo!()
+  }
 
-    fn string_value(&self) -> Option<String> {
-        todo!()
-    }
-}
+  fn append_ex_array(&self, e: &[RcEx]) {
+    todo!()
+  }
 
-impl<'s> ExpressionInterface for Symbol<'s> {
-    fn get_parts(&self) -> Vec<&dyn Ex> {
-        vec![self]
-    }
-
-    fn get_part(&self, i: usize) -> &dyn Ex {
-        todo!()
-    }
-
-    fn set_parts(&self, new_parts: &Vec<&dyn Ex>) {
-        todo!()
-    }
-
-    fn clear_hashes(&self) {
-        todo!()
-    }
-
-    fn len(&self) -> usize {
-        todo!()
-    }
-
-    fn less(&self, i: i32, j: i32) -> bool {
-        todo!()
-    }
-
-    fn swap(&self, i: i32, j: i32) {
-        todo!()
-    }
-
-    fn append_ex(&self, e: &dyn Ex) {
-        todo!()
-    }
-
-    fn append_ex_array(&self, e: &[&dyn Ex]) {
-        todo!()
-    }
-
-    fn head_str(&self) -> String {
-        self.name.to_string()
-    }
-
-    fn get_value(&self) -> String {
-        self.head_str()
-    }
+  fn head_str(&self) -> String {
+    self.name.to_string()
+  }
 }
 
 

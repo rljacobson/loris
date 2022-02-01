@@ -3,10 +3,6 @@
   Defines the fundamental traits and structs used throughout the library.
 
 */
-
-use attributes::Attributes;
-use evaluation::EvalStateInterface;
-use expression::{ExpressionInterface, Ex};
 pub mod atoms;
 pub mod log;
 pub mod attributes;
@@ -14,6 +10,13 @@ pub mod data_structures;
 pub mod evaluation;
 pub mod expression;
 pub mod string;
+
+use strum::Display;
+
+use attributes::Attributes;
+use evaluation::EvalStateInterface;
+use expression::{ExpressionInterface, Ex, RcEx, RcExpressionInterface};
+
 
 
 pub trait DefinitionMap {
@@ -37,19 +40,39 @@ pub trait StreamManager {
 }
 
 
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct DownValue {
-  pub rule        : Box<dyn ExpressionInterface>,
+  pub rule        : RcExpressionInterface,
   pub specificity : i32
 }
 
 pub type EvalFnType =
-    fn(&dyn ExpressionInterface, &dyn EvalStateInterface) -> Box<dyn Ex>;
+    fn(&dyn ExpressionInterface, &dyn EvalStateInterface) -> RcEx;
 
+#[derive(Clone, PartialEq, Eq)]
 pub struct Def {
   pub downvalues  : Vec<DownValue>,
   pub attributes  : Attributes,
-  pub default_expr: Box<dyn Ex>,
+  pub default_expr: RcEx,
 
   // A function defined here will override downvalues.
   pub legacy_eval_fn: EvalFnType
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Display, Hash, Debug)]
+#[repr(i8)]
+pub enum IsEqual {
+  Unknown = -1,
+  False,
+  True,
+}
+
+impl From<bool> for IsEqual {
+    fn from(value: bool) -> Self {
+        if value {
+          Self::True
+        } else {
+          Self::False
+        }
+    }
 }

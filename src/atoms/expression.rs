@@ -5,77 +5,90 @@
 
 */
 
-use std::str::FromStr;
+use crate::{
+  expression::{
+    Ex,
+    ExpressionInterface, ExpressionKind, RcEx
+  },
+  log::LoggingInterface,
+  IsEqual, string::FormattingParameters
+};
 
-use crate::{expression::{Ex, ExpressionInterface}, log::LoggingInterface, string::{FormattingParameters, StringForms}, evaluation::EvalStateInterface};
-
-use super::symbol::Symbol;
 
 
-pub struct Expression<'e> {
-	parts                 : Vec<&'e dyn Ex>,
+
+pub struct Expression {
+	parts                 : Vec<RcEx>,
 	needs_eval            : bool,
 	correctly_instantiated: bool,
 	evaled_hash           : u64,
 	cached_hash           : u64,
 }
 
-impl<'e> Expression<'e> {
+impl Expression {
   pub fn head_assertion(&self, head: &dyn ExpressionInterface, logger: &dyn LoggingInterface) -> bool {
     is_sameq(head, self.get_part(0))
   }
 }
 
-impl Ex for Expression<'_> {
+impl Ex for Expression {
 
   fn string_form(&self, params: &FormattingParameters) -> String {
-    let head = self.get_part(0);
-    let head_str = head.string_form(&params);
+    let head     = self.get_part(0);
+    let head_str = head.string_form(params);
 
-    /* Apparently never used?
-    // If the head is a symbol with a `to_string_fn`.
-    if head.is_symbol() {
-      let head_str = head.string_value();
+    // If the head is a symbol with a `to_string_fn`, use that function.
+    if head.kind() == ExpressionKind::Symbol {
 
       if let Some(to_string_fn) = params.esi.get_string_fn(&head_str) {
         return to_string_fn(self, params);
       }
-    }
-    */
 
-    // Check if the head is `System\`*Form`, which changes the string form.
-    if self.get_parts().len() == 2 {
-      match StringForms::from_str(head_str.as_str()) {
+      // If the head is `System\`*Form`, adjust the formatting parameters accordingly.
+      if self.get_parts().len() == 2 {
+          match head_str.as_str() {
 
-        Ok(form) => {
-          let mut new_params = params.clone();
-          new_params.form = form;
-          return self.get_part(1).string_form(&mut new_params);
-        }
+            "System`InputForm`"
+            | "System`InputForm"
+            | "System`FullForm"
+            | "System`TraditionalForm"
+            | "System`TeXForm"
+            | "System`StandardForm"
+            | "System`OutputForm" => {
+              let mut new_params = params.clone();
+              return self.get_part(1).string_form(&mut new_params);
+            }
 
-        Err(_) => { /* pass */ }
+            _ => {
+              // pass
+            }
 
-      } // end match on `StringForms`
-    } // end if two parts
+          } // end match on head.name()
+        } // end if the head is `System\`*Form`
+    } // end if head is symbol
 
-    let sequence = self.get_parts()[1..]
-                       .iter()
-                       .map(|p| p.string_form(&params))
-                       .collect::<Vec<_>>()
-                       .join(", ");
+    // todo: Why are we not respecting `params.form`?
+    // todo: Add limits on the length of the output.
+    // Default print as M-expression.
+    let sequence =
+      self.parts[1..]
+          .iter()
+          .map(|v| v.string_form(params))
+          .collect()
+          .join(", ");
 
     format!("{}[{}]", head_str, sequence)
   }
 
-  fn is_equal(&self, b: &dyn Ex) -> String {
+  fn is_equal(&self, b: &dyn Ex) -> IsEqual {
       todo!()
   }
 
-  fn deep_copy(&self) -> Box<dyn Ex> {
+  fn deep_copy(&self) -> RcEx {
       todo!()
   }
 
-  fn copy(&self) -> Box<dyn Ex> {
+  fn copy(&self) -> RcEx {
       todo!()
   }
 
@@ -87,21 +100,21 @@ impl Ex for Expression<'_> {
       todo!()
   }
 
-  fn string_value(&self) -> Option<String> {
-      todo!()
+  fn kind(&self) -> ExpressionKind {
+    ExpressionKind::OtherExpression
   }
 }
 
-impl ExpressionInterface for Expression<'_>{
-    fn get_parts(&self) -> Vec<&dyn Ex> {
-        self.parts.clone()
+impl ExpressionInterface for Expression {
+    fn get_parts(&self) -> &Vec<RcEx> {
+        &self.parts
     }
 
-    fn get_part(&self, i: usize) -> &dyn Ex {
-        self.parts[i]
+    fn get_part(&self, i: usize) -> RcEx {
+        self.parts[i].clone()
     }
 
-    fn set_parts(&self, new_parts: &Vec<&dyn Ex>) {
+    fn set_parts(&self, new_parts: &Vec<RcEx>) {
         todo!()
     }
 
@@ -121,19 +134,15 @@ impl ExpressionInterface for Expression<'_>{
         todo!()
     }
 
-    fn append_ex(&self, e: &dyn Ex) {
+    fn append_ex(&self, e: RcEx) {
         todo!()
     }
 
-    fn append_ex_array(&self, e: &[&dyn Ex]) {
+    fn append_ex_array(&self, e: &[RcEx]) {
         todo!()
     }
 
     fn head_str(&self) -> String {
-        todo!()
-    }
-
-    fn get_value(&self) -> String {
         todo!()
     }
 }

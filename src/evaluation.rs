@@ -7,29 +7,32 @@
 
 use crate::{
   string::{
-    ToStringFnType, EvalStateForStringer,
-
+    ToStringFnType
   },
   expression::{
     Ex,
-    ExpressionInterface
+    ExpressionInterface, RcEx
   },
   Def, DefinitionMap, log::LoggingInterface, data_structures::TimeCounterGroup, StreamManager,
 
 };
 
 
-pub trait EvalStateInterface {
-  fn	eval(&self, expr: &dyn Ex) -> &dyn Ex;
+pub trait EvalStateForStringer {
+  fn get_string_fn(&self, head_str: &str) -> Option<ToStringFnType>;
+  // Used by Definition[]
+  fn get_defined(&self, name: &str) -> Option<&Def>;
+}
 
-  fn	get_defined(&self, name: &str) -> Option<&Def>;
+pub trait EvalStateInterface: EvalStateForStringer {
+  fn	eval(&self, expr: &dyn Ex) -> RcEx;
+
   fn	set_defined(&self, name: &str, def: &Def);
-  fn	get_string_fn(&self, head_str: String) -> Option<ToStringFnType>;
   fn	init(&self, load_all_defs: bool);
   fn	is_def(&self, name: &str) -> bool;
   fn	get_def(&self, name: &str, lhs: &dyn Ex) ->
-      (&dyn Ex, bool, Box<dyn ExpressionInterface>);
-  fn	get_sym_def(&self, name: &str) -> Option<&dyn Ex>;
+      (RcEx, bool, Box<dyn ExpressionInterface>);
+  fn	get_sym_def(&self, name: &str) -> Option<RcEx>;
   fn	mark_seen(&self, name: &str);
   fn	define(&self, lhs: &dyn Ex, rhs: &dyn Ex);
   fn	clear_all(&self);
@@ -43,7 +46,7 @@ pub trait EvalStateInterface {
   fn	throw(&self, e: Box<dyn ExpressionInterface>);
   fn	has_thrown(&self) -> bool;
   fn	thrown(&self) -> Box<dyn ExpressionInterface>;
-  fn	process_top_level_result(&self, input: &dyn Ex, output: &dyn Ex) -> &dyn Ex;
+  fn	process_top_level_result(&self, input: &dyn Ex, output: &dyn Ex) -> RcEx;
 
   fn	get_logger(&self) -> Box<dyn LoggingInterface>;
   fn	get_trace(&self) -> Box<dyn ExpressionInterface>;
