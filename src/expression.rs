@@ -60,6 +60,8 @@ pub trait ExpressionInterface: Ex {
 }
 
 
+// Since `String` is not defined in any internal module, our only option is to put the `impl Ex` in the module that
+// defines `Ex`.
 impl Ex for String {
     fn string_form(&self, params: &FormattingParameters) -> String {
         match params.form {
@@ -76,18 +78,18 @@ impl Ex for String {
     fn is_equal(&self, other: &dyn Ex) -> IsEqual {
         match other.kind() {
             ExpressionKind::String => {
-              (self.string_form() == other.string_form()).into()
+              (self.string_form(&FormattingParameters::standard()) == other.string_form(&FormattingParameters::standard())).into()
             },
             _ => IsEqual::False,
         }
     }
 
     fn deep_copy(&self) -> RcEx {
-        todo!()
+        self.copy()
     }
 
     fn copy(&self) -> RcEx {
-        todo!()
+        Rc::new(self.clone())
     }
 
     fn needs_eval(&self) -> bool {
@@ -96,5 +98,9 @@ impl Ex for String {
 
     fn hash(&self) -> u64 {
         todo!()
+    }
+
+    fn kind(&self) -> ExpressionKind {
+        ExpressionKind::String
     }
 }

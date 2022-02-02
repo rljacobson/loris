@@ -4,6 +4,7 @@ use std::hash::{
   Hash,
   Hasher
 };
+use std::ops::Index;
 use std::rc::Rc;
 
 use fnv::FnvHasher;
@@ -24,13 +25,13 @@ pub type RcSymbol = Rc<Symbol>;
 pub struct Symbol {
   // This awkward construction is due to the need to give out owned references to
   // a vector containing `name.`
-  pub name: String,
+  pub name: Vec<Rc<String>>,
   pub hash: u64
 }
 
 impl Display for Symbol {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.name)
+    write!(f, "{}", self.name())
   }
 }
 
@@ -39,17 +40,21 @@ impl Symbol {
   pub fn new_rc(name: String) -> RcSymbol {
     Rc::new(
       Symbol {
-        name,
+        name: vec![Rc::new(name)],
         hash: 0
       }
     )
+  }
+
+  fn name(&self) -> &String {
+    self.name.index(0)
   }
 
   // Private to force a new hash even if `self.hash != 0`.
   fn _hash(&self) -> u64 {
     let hasher = FnvHasher::default();
 
-    hasher.write(self.name.as_bytes());
+    hasher.write(self.name().as_bytes());
     self.hash = hasher.finish();
 
     return self.hash;
@@ -64,25 +69,23 @@ impl Symbol {
     return self.hash;
   }
 
-  // Formatting-oriented Methods
-
 }
 
 
 impl Ex for Symbol {
 
   fn string_form(&self, params: &FormattingParameters) -> String {
-    if self.name.len() == 0 {
+    if self.name().len() == 0 {
       return "<EMPTYSYM>".to_string();
     }
 
-    if self.name.starts_with(&params.context) {
-      return self.name
-      .strip_prefix(
-        &params.context
-      )
-      .unwrap()
-      .to_string();
+    if self.name().starts_with(&params.context) {
+      return self.name()
+                .strip_prefix(
+                    &params.context
+                  )
+                .unwrap()
+                .to_string();
     }
 
     { // Scope for part_iter
@@ -92,23 +95,23 @@ impl Ex for Symbol {
         let path = path_part.string_form(params);
 
         // Don't print the `Global\`whatever` part if it's in scope.
-        if self.name.starts_with(&path) {
-          return self.name
-          .strip_prefix(
-            &params.context
-          )
-          .unwrap()
-          .to_string();
+        if self.name().starts_with(&path) {
+          return self.name()
+                    .strip_prefix(
+                          &params.context
+                        )
+                    .unwrap()
+                    .to_string();
         }
       }
     }
-    return format_sym_name(&self.name, params)
+    return format_sym_name(self.name(), params)
   }
 
   fn is_equal(&self, other: &dyn Ex) -> IsEqual {
     match other.kind() {
 
-      ExpressionKind::Symbol => {
+      self.kind() => {
         let params = FormattingParameters::standard();
         (self.string_form(&params) == other.string_form(&params)).into()
       }
@@ -138,50 +141,6 @@ impl Ex for Symbol {
     ExpressionKind::Symbol
   }
 
-}
-
-impl ExpressionInterface for Symbol {
-
-  fn get_parts(&self) -> &Vec<RcEx> {
-    // Busted. 
-    vec![Rc::new(self.clone())]
-  }
-
-  fn get_part(&self, i: usize) -> RcEx {
-    todo!()
-  }
-
-  fn set_parts(&self, new_parts: &Vec<RcEx>) {
-    todo!()
-  }
-
-  fn clear_hashes(&self) {
-    todo!()
-  }
-
-  fn len(&self) -> usize {
-    todo!()
-  }
-
-  fn less(&self, i: i32, j: i32) -> bool {
-    todo!()
-  }
-
-  fn swap(&self, i: i32, j: i32) {
-    todo!()
-  }
-
-  fn append_ex(&self, e: RcEx) {
-    todo!()
-  }
-
-  fn append_ex_array(&self, e: &[RcEx]) {
-    todo!()
-  }
-
-  fn head_str(&self) -> String {
-    self.name.to_string()
-  }
 }
 
 
