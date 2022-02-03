@@ -4,10 +4,9 @@
 
 */
 
-use fnv::{
+pub use fnv::{
   FnvBuildHasher,
   FnvHasher,
   FnvHashSet,
   FnvHashMap
 };
-
