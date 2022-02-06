@@ -1,9 +1,9 @@
 /*!
 
-  The abstract interfaces for expressions. Note the naming convention: the trait
-  is called `WidgetInterface`, while the reference counted copy-on-write
-  pointer to a `WidgetInterface` is a `Widget`. For copy-on-write operations,
-  be sure to use `widget.make_mut()` rather than `widget.get_mut()`.
+The abstract interfaces for expressions. Note the naming convention: the trait
+is called `WidgetInterface`, while the reference counted copy-on-write
+pointer to a `WidgetInterface` is a `Widget`. For copy-on-write operations,
+be sure to use `widget.make_mut()` rather than `widget.get_mut()`.
 
 */
 
@@ -13,6 +13,8 @@ use std::{
   rc::Rc
 };
 
+use strum::EnumDiscriminants;
+
 use crate::{
   formatting::{
     FormattingParameters,
@@ -21,107 +23,105 @@ use crate::{
   IsEqual,
   data_structures::hash::{
     FnvHasher
+  },
+  interfaces::{ExpressionRepresentation},
+  atoms::{
+    symbol::Symbol,
+    string::StringExpression,
+    mexpression::MExpression
   }
 };
 
-/// Strings and Symbols are special cases for formatting purposes.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum ExpressionKind {
-  String,
-  Symbol,
-  OtherExpression,
-  Other
+/// Wrapper around `atoms` and `MExpression`s the primary function of which is to
+/// provide virtual dispatch based on expression type.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, EnumDiscriminants)]
+pub enum Expression {
+  StringExpression(StringExpression),
+  Symbol(Symbol),
+  MExpression(MExpression),
+  // Other(Expression)
 }
 
-pub type Expression  = Rc<dyn ExpressionInterface>;
-pub type MExpression = Rc<dyn MExpressionInterface>;
+type Ex = Expression;
 
-/// Something is only an `Expression` if it is not an M-expression, i.e. an atom: strings, symbols, numbers and other literals…
-pub trait ExpressionInterface {
-  fn string_form(&self, params: &FormattingParameters) -> String;
-  fn is_equal(&self, other: &dyn ExpressionInterface) -> IsEqual;
-  fn deep_copy(&self) -> Expression;
-  fn copy(&self) -> Expression;
-  fn needs_eval(&self) -> bool;
-  fn hash(&self) -> u64;
-  fn kind(&self) -> ExpressionKind;
+macro_rules! forward_call {
+  ($func_name:ident, $ret_type:ty) => {
+    pub fn $func_name(&self) -> $ret_type {
+      match self {
+        Expression::StringExpression(e) => e.$func_name(),
+        Expression::Symbol(e)           => e.$func_name(),
+        Expression::MExpression(e)      => e.$func_name(),
+      }
+    }
+  }
 }
 
-impl Display for dyn ExpressionInterface {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.string_form(&FormattingParameters::default()))
+impl Expression {
+
+  pub fn string_form(&self, params: &FormattingParameters) -> String {
+    match self {
+      Expression::StringExpression(e) => e.string_form(params),
+      Expression::Symbol(e)           => e.string_form(params),
+      Expression::MExpression(e)      => e.string_form(params),
     }
+  }
+
+  pub fn is_equal(&self, other: &Expression) -> IsEqual {
+    match (*self, *other) {
+
+      (Ex::StringExpression(u), Ex::StringExpression(v)) => u.is_equal(other),
+
+      (Ex::Symbol(u), Ex::Symbol(v)) => u.is_equal(other),
+
+      (Ex::MExpression(u), Ex::MExpression(v)) => u.is_equal(other),
+
+      _ => IsEqual::False
+    }
+  }
+
+  forward_call!(deep_copy, Expression);
+  forward_call!(copy, Expression);
+  forward_call!(needs_eval, bool);
+  forward_call!(hash, u64);
+
+  // pub fn deep_copy(&self) -> Expression {
+  //   match self {
+  //     Expression::StringExpression(e) => e.deep_copy(),
+  //     Expression::Symbol(e)           => e.deep_copy(),
+  //     Expression::MExpression(e)      => e.deep_copy(),
+  //   }
+  // }
+
 }
 
-impl PartialEq for dyn ExpressionInterface {
-    fn eq(&self, other: &Self) -> bool {
-        self.is_equal(other)==IsEqual::True
+impl PartialOrd for Expression {
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    match (self, other) {
+
+      (Ex::StringExpression(u), Ex::StringExpression(v)) => u.partial_cmp(v),
+
+      (Ex::Symbol(u), Ex::Symbol(v)) => u.partial_cmp(v),
+
+      (Ex::MExpression(u), Ex::MExpression(v)) => u.partial_cmp(v),
+
+      _ => None
+
     }
-}
-
-/// An `MExpression` is an expression of the form `head[exp1, exp2, …]`. It is any expression that has parts.
-pub trait MExpressionInterface: ExpressionInterface {
-  fn get_parts(&self) -> &Vec<Expression>;
-  fn get_part(&self, i: usize) -> Expression;
-  fn set_parts(&self, new_parts: &Vec<Expression>);
-  fn clear_hashes(&self);
-
-  fn len(&self) -> usize;
-  fn less(&self, i: i32, j: i32) -> bool;
-  fn swap(&self, i: i32, j: i32);
-  fn append_ex(&self, e: &dyn ExpressionInterface);
-  fn append_ex_array(&self, e: &[Expression]);
-  fn head_str(&self) -> String;
+  }
 }
 
 
-// Since `String` is not defined in any internal module, our only option is to put the `impl Ex` in the module that
-// defines `Ex`.
-impl ExpressionInterface for String {
-    fn string_form(&self, params: &FormattingParameters) -> String {
-        match params.form {
 
-          DisplayForm::Output
-          | DisplayForm::Traditional
-          | DisplayForm::Standard => {
-            self.clone()
-          },
-
-          _ => format!("\"{}\"", self)
-
-        }
+macro_rules! upcast_repr_to_expr {
+  ($repr: ty) => {
+    impl From<$repr> for Expression {
+      fn from(representation: $repr) -> Self {
+        Expression::$repr(representation)
+      }
     }
-
-    fn is_equal(&self, other: &dyn ExpressionInterface) -> IsEqual {
-        match other.kind() {
-            ExpressionKind::String => {
-              let params = FormattingParameters::standard();
-              (self.string_form(&params) == other.string_form(&params)).into()
-            },
-            _ => IsEqual::False,
-        }
-    }
-
-    fn deep_copy(&self) -> Expression {
-        self.copy()
-    }
-
-    fn copy(&self) -> Expression {
-        Rc::new(self.clone())
-    }
-
-    fn needs_eval(&self) -> bool {
-        false
-    }
-
-    fn hash(&self) -> u64 {
-        let mut hasher = FnvHasher::default();
-        hasher.write(self.as_str().as_bytes());
-        hasher.finish()
-    }
-
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::String
-    }
-
+  };
 }
+
+upcast_repr_to_expr!(StringExpression);
+upcast_repr_to_expr!(Symbol);
+upcast_repr_to_expr!(MExpression);

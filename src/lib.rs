@@ -1,25 +1,25 @@
-#![feature(trait_upcasting)]
+#![feature(assert_matches)]
 /*!
 
  Defines the fundamental traits and structs used throughout the library.
 
 */
+//#![feature(trait_upcasting)]
 pub mod atoms;
 pub mod attributes;
 pub mod data_structures;
 pub mod definition;
 pub mod evaluation;
 pub mod expression;
+pub mod interfaces;
 pub mod formatting;
 pub mod log;
 
 use std::rc::Rc;
 
 
-use strum::Display;
-
-
 use expression::Expression;
+use strum::Display;
 
 
 pub type StreamManager = Rc<dyn StreamManagerInterface>;
@@ -35,6 +35,7 @@ pub trait StreamManagerInterface {
 }
 
 
+/// This is not the same as `PartialEq`, because `PartialEq` uses `false` for incomparable.
 #[derive(Copy, Clone, PartialEq, Eq, Display, Hash, Debug)]
 #[repr(i8)]
 pub enum IsEqual {

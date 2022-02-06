@@ -1,21 +1,15 @@
 
 
 use crate::{
-  expression::{MExpression, ExpressionInterface},
-  attributes::Attributes
+  attributes::Attributes,
+  atoms::mexpression::MExpression
 };
 
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct DownValue {
   pub rule        : MExpression,
   pub specificity : i32
-}
-
-impl PartialEq for DownValue {
-    fn eq(&self, other: &Self) -> bool {
-        <dyn ExpressionInterface>::eq(&*self.rule, &*other.rule)
-    }
 }
 
 // pub type EvalFnType =
