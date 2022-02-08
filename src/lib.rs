@@ -1,10 +1,12 @@
+#![feature(trait_alias)]
 #![feature(assert_matches)]
 /*!
 
  Defines the fundamental traits and structs used throughout the library.
 
 */
-//#![feature(trait_upcasting)]
+
+pub mod matching;
 pub mod atoms;
 pub mod attributes;
 pub mod data_structures;
@@ -14,6 +16,9 @@ pub mod expression;
 pub mod interfaces;
 pub mod formatting;
 pub mod log;
+
+
+// #[feature(trait_upcasting)]
 
 use std::rc::Rc;
 

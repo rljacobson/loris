@@ -6,11 +6,7 @@
 
 */
 
-use std::{
-  hash::Hasher,
-  fmt::Display,
-  rc::Rc
-};
+use std::fmt::Display;
 
 use crate::{
   formatting::FormattingParameters,
@@ -21,6 +17,8 @@ use crate::{
 
 // pub type RcExpressionRepresentation  = Rc<dyn ExpressionRepresentation>;
 // pub type RcMExpressionRepresentation = Rc<dyn MExpressionRepresentation>;
+
+pub trait ExpRep = ExpressionRepresentation;
 
 /// Something is only an `Expression` if it is not an M-expression, i.e. an atom: strings, symbols, numbers and other literals…
 pub trait ExpressionRepresentation {

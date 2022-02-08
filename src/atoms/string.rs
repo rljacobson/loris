@@ -39,6 +39,7 @@ impl ExpressionRepresentation for StringExpression {
     }
   }
 
+  /// This differs from `same_q` in that it recursively tests equality, whereas `same_q` only compares the hash values.
   fn is_equal(&self, other: &Expression) -> IsEqual {
     match other {
 
@@ -47,6 +48,7 @@ impl ExpressionRepresentation for StringExpression {
       },
 
       _ => IsEqual::False,
+
     }
   }
 
@@ -64,8 +66,10 @@ impl ExpressionRepresentation for StringExpression {
 
   fn hash(&self) -> u64 {
     let mut hasher = FnvHasher::default();
+
     hasher.write(&[102u8, 206u8, 57u8, 172u8, 207u8, 100u8, 198u8, 133u8]);
     hasher.write(self.0.as_str().as_bytes());
+
     hasher.finish()
   }
 

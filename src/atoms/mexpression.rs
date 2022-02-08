@@ -21,44 +21,44 @@ pub struct MExpression {
 }
 
 impl MExpression {
-  fn parts(&self) -> &Vec<Expression> {
+  pub fn parts(&self) -> &Vec<Expression> {
     &self.parts
   }
 
-  fn get_part(&self, i: usize) -> Expression {
+  pub fn part(&self, i: usize) -> Expression {
     self.parts[i]
   }
 
-  fn set_parts(&self, new_parts: &Vec<Expression>) {
-    self.parts = *new_parts;
+  pub fn set_parts(&self, new_parts: Vec<Expression>) {
+    self.parts = new_parts;
   }
 
-  fn clear_hashes(&self) {
+  pub fn clear_hashes(&self) {
     self.evaled_hash = 0;
     self.cached_hash = 0;
   }
 
-  fn len(&self) -> usize {
+  pub fn len(&self) -> usize {
     self.parts.len() - 1
   }
 
-  fn less(&self, i: usize, j: usize) -> Option<Ordering> {
+  pub fn less(&self, i: usize, j: usize) -> Option<Ordering> {
     self.parts[i+1].partial_cmp(&self.parts[j+1])
   }
 
-  fn swap(&mut self, i: usize, j: usize) {
+  pub fn swap(&mut self, i: usize, j: usize) {
     std::mem::swap(&mut self.parts[i+1], &mut self.parts[j+1]);
   }
 
-  fn append_ex(&self, e: Expression) {
+  pub fn append_ex(&self, e: Expression) {
     self.parts.push(e);
   }
 
-  fn append_ex_array(&mut self, mut e: Vec<Expression>) {
+  pub fn append_ex_array(&mut self, mut e: Vec<Expression>) {
     self.parts.extend(e);
   }
 
-  fn head_str(&self) -> String {
+  pub fn head_str(&self) -> String {
     match self.parts[0] {
 
       Expression::Symbol(Symbol(name)) => name.clone(),
@@ -66,6 +66,19 @@ impl MExpression {
       _ => "".to_string()
 
     }
+  }
+
+  pub fn has_head(&self, head: &str) -> bool {
+    if let Expression::Symbol(Symbol(name)) = self.parts[0] {
+      name == head
+    } else {
+      false
+    }
+  }
+
+  pub fn has_head_expression(&self, other_expression: &Expression) -> bool {
+    let head_expression = self.parts[0];
+    head_expression.same_q(other_expression)
   }
 }
 
@@ -84,6 +97,7 @@ impl ExpressionRepresentation for MExpression {
     todo!()
   }
 
+  /// This differs from `same_q` in that it recursively tests equality, whereas `same_q` only compares the hash values.
   fn is_equal(&self, other: &Expression) -> IsEqual {
     if let Expression::MExpression(other) = other {
 
@@ -135,6 +149,10 @@ impl ExpressionRepresentation for MExpression {
   }
 
   fn hash(&self) -> u64 {
+    if self.cached_hash != 0 {
+      return self.cached_hash;
+    }
+
     let mut hasher = FnvHasher::default();
 
     hasher.write(&[72u8, 5u8, 244u8, 86u8, 5u8, 210u8, 69u8, 30u8]);

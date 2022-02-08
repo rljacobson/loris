@@ -2,10 +2,7 @@
   The attributes of a function, e.g. `Flat`, `Listable`, ….
 */
 
-use std::{
-  string::ToString,
-  ops::Index
-};
+use std::ops::Index;
 
 use strum::{
   Display,
