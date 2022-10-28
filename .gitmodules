@@ -1,0 +1,7 @@
+[submodule "loris_cli"]
+	path = loris_cli
+	url = git@github.com:rljacobson/loris_cli.git
+
+[submodule "lorislib"]
+	path = lorislib
+	url = git@github.com:rljacobson/lorislib.git

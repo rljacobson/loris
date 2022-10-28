@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+	"lorislib",
+    "loris_cli"
+]
