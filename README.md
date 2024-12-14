@@ -4,15 +4,15 @@
 
 <img src="loris.jpg" alt="Loris" style="zoom: 33%;" />
 
-Loris is a term rewriting and computer algebra system based on pattern matching algorithms developed by Besik 
-Dundua, Temur Kutsia, and Mircea Marin. (See below.) To my knowledge, this is the first and only implementation of 
-these algorithms. 
+Loris is a term rewriting and computer algebra system based on pattern matching algorithms developed by Besik
+Dundua, Temur Kutsia, and Mircea Marin. (See below.) To my knowledge, this is the first and only implementation of
+these algorithms.
 
 ## Getting and Building the Code
 
 [This repository](https://github.com/rljacobson/loris) is a meta-repository with a Cargo (Rust) workspace and
 [lorislib](https://github.com/rljacobson/lorislib) and
-and [Loris-CLI](https://github.com/rljacobson/loris_cli) as git submodules, the crates making up the workspace. To 
+and [Loris-CLI](https://github.com/rljacobson/loris_cli) as git submodules, the crates making up the workspace. To
 get everything in one go, just issue the command:
 
 ```bash
@@ -20,20 +20,20 @@ $ git clone --recurse-submodules https://github.com/rljacobson/loris
 ```
 or the SSH version:
 ```bash
-$ git clone --recurse-submodules git@github.com:rljacobson/lorislib.git
+$ git clone --recurse-submodules git@github.com:rljacobson/loris.git
 ```
 Use the usual `cargo` `build` and/or `run` commands, the second of which will build the project if it needs to:
 ```bash
-$ cargo run 
+$ cargo run
 ```
-The first time building the project takes almost exactly 1 minute on my 2018 MacBook Air. A large chunk of that time 
+The first time building the project takes almost exactly 1 minute on my 2018 MacBook Air. A large chunk of that time
 is spent building GMP. Subsequent builds take < 13 seconds. Your computer is probably a lot faster.
 
 
 ## Using
 
-Loris uses the syntax of Wolfram Language (Mathematica). Some quick examples are in order. Here is a sample session 
-you can follow along with: 
+Loris uses the syntax of Wolfram Language (Mathematica). Some quick examples are in order. Here is a sample session
+you can follow along with:
 
 ```mma
 Loris term rewriting system version 0.1.0.
@@ -78,14 +78,14 @@ Plus[g[Times[a, b]], c, d]
 ```
 
 
-You can think of Loris as an implementation of Wolfram Language. Only a handful of built-ins and predefined 
-functions exist so far. Expect only basic arithmetic functions and system-related built-ins to work. However, it is 
-nearing the point where it has enough built-ins to implement a powerful CAS in its own language. Source files for 
+You can think of Loris as an implementation of Wolfram Language. Only a handful of built-ins and predefined
+functions exist so far. Expect only basic arithmetic functions and system-related built-ins to work. However, it is
+nearing the point where it has enough built-ins to implement a powerful CAS in its own language. Source files for
 this implementation will accrue in [`lib/`](./lib/).
 
 Another major limitation is that the matcher only has linear matching implemented so far, meaning that a variable can
-only appear once on the LHS of a function definition. To get around this limitation, you can include a 
-`Condition` in your definition: `f[x_, y_] := expr /; condition`. Here is a simplification rule (using `UpSet`) 
+only appear once on the LHS of a function definition. To get around this limitation, you can include a
+`Condition` in your definition: `f[x_, y_] := expr /; condition`. Here is a simplification rule (using `UpSet`)
 that employs this workaround:
 
 ```mma
@@ -97,8 +97,8 @@ When I implement Algorithm $M$ from [Dundua et al, 2021], this limitation will b
 
 Loris started as an implementation of the pattern matching algorithms described in the paper:
 
-> Besik Dundua, Temur Kutsia, and Mircea Marin, 
-> _[Variadic equational matching in associative and commutative theories](http://www3.risc.jku.at/publications/download/risc_6260/variadic-equational-matching-jsc-final-with-mma-versions.pdf)_, 
+> Besik Dundua, Temur Kutsia, and Mircea Marin,
+> _[Variadic equational matching in associative and commutative theories](http://www3.risc.jku.at/publications/download/risc_6260/variadic-equational-matching-jsc-final-with-mma-versions.pdf)_,
 > Journal of Symbolic Computation, vol 106, 2021, p. 78-109
 
 
@@ -108,7 +108,7 @@ We implement algorithms **LM** (_Linear Matching_) and **LM**$_{\text{S}}$ (_Lin
 Strict associativity_) as described in the paper with a minor modification to **LM** to make it
 [finitary](doc/Glossary.md). The algorithm relies on repeated application of transformation rules to "match
 equations." The algorithm is described in [doc/Algorithm.md](doc/Algorithm.md). The transformation rules are
-listed in [doc/TransformationRules.md](doc/TransformationRules.md) and implemented in the files in 
+listed in [doc/TransformationRules.md](doc/TransformationRules.md) and implemented in the files in
 [src/matching/](src/matching/). The algorithm $M_{\text{MMA}}$, which captures the semantics of
 Wolfram Mathematica's matching behavior, is not implemented, but I would like to implement it in the future.
 
@@ -126,10 +126,10 @@ crate is distributed under the MIT license.
 
 # Contributing
 
-Feel free to contribute. I am happy to take PRs. Unfortunately, I generally have so much happening in my life that I 
+Feel free to contribute. I am happy to take PRs. Unfortunately, I generally have so much happening in my life that I
 cannot offer support for my software projects on GitHub. Feel free to fork the project, though.
 
 # The Slow Loris
 
 The Slow Loris is at risk of extinction due to habitat loss and the illegal wildlife trade. There is demand for
-lorises for use in traditional medicine and as pets. 
+lorises for use in traditional medicine and as pets.
